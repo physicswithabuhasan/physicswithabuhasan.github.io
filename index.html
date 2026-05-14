@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0a0f"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>AttendX — Attendance Module</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0f;
+  --surface:#12121a;
+  --surface2:#1a1a26;
+  --border:#ffffff12;
+  --border2:#ffffff20;
+  --accent:#4f8eff;
+  --accent2:#7c5cfc;
+  --green:#1ecb7b;
+  --red:#ff4f6a;
+  --amber:#ffb84f;
+  --text:#f0f0f8;
+  --text2:#9898b0;
+  --text3:#55556a;
+  --font:'Sora',sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:16px;
+  --r2:12px;
+  --r3:8px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input{font-family:var(--font);outline:none}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;transition:opacity .3s,transform .3s}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
+
+/* ── BACKGROUNDS ── */
+.bg-mesh{position:absolute;inset:0;z-index:0;overflow:hidden}
+.bg-mesh::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,#4f8eff18 0%,transparent 70%);top:-200px;left:-150px;animation:drift1 12s ease-in-out infinite}
+.bg-mesh::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,#7c5cfc14 0%,transparent 70%);bottom:-150px;right:-100px;animation:drift2 15s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,40px)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,-30px)}}
+.content{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HOME SCREEN ── */
+#home .top{padding:48px 24px 24px;text-align:center}
+#home .logo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:32px}
+#home .logo-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+#home .logo-text{font-size:15px;font-weight:500;letter-spacing:.15em;color:var(--text2);text-transform:uppercase}
+#home h1{font-size:32px;font-weight:300;line-height:1.1;letter-spacing:-.02em;margin-bottom:8px}
+#home h1 span{font-weight:600;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#home .sub{font-size:14px;color:var(--text2);font-weight:300}
+.time-card{margin:0 24px;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.time-main{font-size:36px;font-weight:300;font-family:var(--mono);letter-spacing:-.02em}
+.time-date{font-size:13px;color:var(--text2);margin-top:4px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px;margin-bottom:16px}
+.btn-action{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r);padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;transition:all .2s;active:transform scale(.97)}
+.btn-action:active{transform:scale(.97);border-color:var(--accent)}
+.btn-action .icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.btn-action .label{font-size:13px;font-weight:500;color:var(--text)}
+.btn-action .hint{font-size:11px;color:var(--text3)}
+.icon-face{background:linear-gradient(135deg,#4f8eff22,#4f8eff44);color:var(--accent)}
+.icon-fp{background:linear-gradient(135deg,#7c5cfc22,#7c5cfc44);color:var(--accent2)}
+.icon-qr{background:linear-gradient(135deg,#1ecb7b22,#1ecb7b44);color:var(--green)}
+.icon-admin{background:linear-gradient(135deg,#ffb84f22,#ffb84f44);color:var(--amber)}
+.bottom-bar{padding:12px 24px 24px;display:flex;justify-content:space-between;align-items:center;border-top:0.5px solid var(--border)}
+.stat-item{text-align:center}
+.stat-num{font-size:20px;font-weight:600;font-family:var(--mono)}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.stat-num.green{color:var(--green)}
+.stat-num.amber{color:var(--amber)}
+
+/* ── FACE SCAN SCREEN ── */
+#face .header{display:flex;align-items:center;gap:12px;padding:52px 24px 20px}
+#face .back-btn{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+#face .header h2{font-size:18px;font-weight:500}
+.cam-wrap{position:relative;margin:0 24px;border-radius:var(--r);overflow:hidden;background:#000;aspect-ratio:3/4}
+#videoEl{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#faceCanvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+.cam-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.face-guide{width:200px;height:240px;border:2px solid var(--accent);border-radius:50% 50% 45% 45%;opacity:.6;animation:guide-pulse 2s ease-in-out infinite}
+@keyframes guide-pulse{0%,100%{opacity:.4;border-color:var(--accent)}50%{opacity:.9;border-color:#7c5cfc}}
+.scan-line{position:absolute;width:180px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite}
+@keyframes scan{0%{top:20%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:75%;opacity:0}}
+.cam-status{margin:16px 24px 0;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r2);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.cam-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cam-status-text{font-size:13px;color:var(--text2);flex:1}
+.cam-status-detail{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.face-bottom{padding:16px 24px 24px;display:flex;flex-direction:column;gap:10px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:var(--r2);padding:14px;font-size:14px;font-weight:500;color:#fff;width:100%;transition:opacity .2s}
+.btn-primary:active{opacity:.8}
+.btn-secondary{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r2);padding:13px;font-size:14px;color:var(--text2);width:100%;transition:all .2s}
+.btn-secondary:active{border-color:var(--border2)}
+
+/* ── FINGERPRINT SCREEN ── */
+#fingerprint .header{display:flex;align-items:center;gap:12px;padding:52px 24px 20px}
+#fingerprint .header h2{font-size:18px;font-weight:500}
+.fp-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.fp-icon-wrap{position:relative;margin-bottom:32px}
+.fp-ring{width:160px;height:160px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center}
+.fp-ring.scanning{border-color:var(--accent2);animation:fp-ring-pulse 1.5s ease-in-out infinite}
+@keyframes fp-ring-pulse{0%,100%{box-shadow:0 0 0 0 #7c5cfc30}50%{box-shadow:0 0 0 20px transparent}}
+.fp-icon{font-size:72px;filter:drop-shadow(0 0 20px #7c5cfc40)}
+.fp-title{font-size:20px;font-weight:500;margin-bottom:8px;text-align:center}
+.fp-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:32px}
+.fp-bottom{width:100%;padding:0 24px 32px;display:flex;flex-direction:column;gap:10px}
+
+/* ── RESULT SCREEN ── */
+#result .content{align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+.result-icon{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 24px;transition:all .5s}
+.result-icon.success{background:linear-gradient(135deg,#1ecb7b22,#1ecb7b44);border:1.5px solid var(--green);box-shadow:0 0 40px #1ecb7b30}
+.result-icon.fail{background:linear-gradient(135deg,#ff4f6a22,#ff4f6a44);border:1.5px solid var(--red);box-shadow:0 0 40px #ff4f6a30}
+.result-title{font-size:26px;font-weight:500;margin-bottom:8px}
+.result-title.success{color:var(--green)}
+.result-title.fail{color:var(--red)}
+.result-name{font-size:18px;font-weight:300;color:var(--text2);margin-bottom:4px}
+.result-time{font-size:13px;color:var(--text3);font-family:var(--mono);margin-bottom:32px}
+.result-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 20px;width:100%;text-align:left;margin-bottom:24px}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.result-row:not(:last-child){border-bottom:0.5px solid var(--border)}
+.result-key{color:var(--text3)}
+.result-val{color:var(--text);font-family:var(--mono)}
+.result-val.green{color:var(--green)}
+
+/* ── ENROLL SCREEN ── */
+#enroll .header{display:flex;align-items:center;gap:12px;padding:52px 24px 16px}
+#enroll .header h2{font-size:18px;font-weight:500}
+.enroll-form{padding:0 24px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.field input,.field select{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r2);padding:12px 14px;font-size:14px;color:var(--text);transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field select option{background:var(--surface2)}
+.enroll-face-preview{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3);font-size:13px;overflow:hidden;position:relative}
+#enrollPreview{width:100%;height:100%;object-fit:cover;display:none}
+.captured-badge{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px}
+.enroll-bottom{padding:16px 24px 32px}
+
+/* ── ADMIN SCREEN ── */
+#admin .header{display:flex;align-items:center;gap:12px;padding:52px 24px 16px}
+#admin .header h2{font-size:18px;font-weight:500;flex:1}
+.admin-tabs{display:flex;gap:4px;margin:0 24px 16px;background:var(--surface2);border-radius:var(--r2);padding:4px}
+.tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:500;border-radius:var(--r3);color:var(--text2);transition:all .2s}
+.tab.active{background:var(--surface);color:var(--text);border:0.5px solid var(--border2)}
+.admin-panel{display:none;flex:1;overflow-y:auto;padding:0 24px}
+.admin-panel.active{display:block}
+.log-item{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.log-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.log-name{font-size:14px;font-weight:500;margin-bottom:2px}
+.log-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.log-type{margin-left:auto;font-size:10px;font-weight:600;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.type-face{background:#4f8eff22;color:var(--accent)}
+.type-fp{background:#7c5cfc22;color:var(--accent2)}
+.type-qr{background:#1ecb7b22;color:var(--green)}
+.type-pin{background:#ffb84f22;color:var(--amber)}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.summary-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r2);padding:14px}
+.summary-val{font-size:28px;font-weight:600;font-family:var(--mono);margin-bottom:4px}
+.summary-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.user-item{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.user-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.user-name{font-size:14px;font-weight:500}
+.user-dept{font-size:11px;color:var(--text3);margin-top:1px}
+.user-enrolled{margin-left:auto;font-size:11px;color:var(--green)}
+.export-btn{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r2);padding:12px 16px;font-size:13px;color:var(--text2);width:100%;text-align:left;margin-bottom:8px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.export-btn:active{border-color:var(--accent)}
+.export-icon{font-size:18px}
+.empty-state{text-align:center;padding:48px 16px;color:var(--text3)}
+.empty-state .e-icon{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:13px;line-height:1.6}
+
+/* ── QR SCREEN ── */
+#qrscan .header{display:flex;align-items:center;gap:12px;padding:52px 24px 20px}
+#qrscan .header h2{font-size:18px;font-weight:500}
+.qr-wrap{position:relative;margin:0 24px;border-radius:var(--r);overflow:hidden;background:#000;aspect-ratio:1}
+#qrVideo{width:100%;height:100%;object-fit:cover}
+.qr-corners{position:absolute;inset:20px;pointer-events:none}
+.qr-corner{position:absolute;width:24px;height:24px;border-color:var(--accent);border-style:solid;border-width:0}
+.qr-corner.tl{top:0;left:0;border-top-width:2px;border-left-width:2px;border-top-left-radius:4px}
+.qr-corner.tr{top:0;right:0;border-top-width:2px;border-right-width:2px;border-top-right-radius:4px}
+.qr-corner.bl{bottom:0;left:0;border-bottom-width:2px;border-left-width:2px;border-bottom-left-radius:4px}
+.qr-corner.br{bottom:0;right:0;border-bottom-width:2px;border-right-width:2px;border-bottom-right-radius:4px}
+.qr-status{margin:16px 24px 0;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r2);padding:14px 16px;font-size:13px;color:var(--text2);text-align:center}
+.qr-bottom{padding:16px 24px 32px;display:flex;flex-direction:column;gap:10px}
+
+/* ── NOTIFICATIONS/TOAST ── */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--r2);padding:12px 20px;font-size:13px;z-index:999;opacity:0;transition:all .3s;white-space:nowrap;max-width:calc(100vw - 48px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+
+/* ── LOADING ── */
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .5s}
+.loading-screen.done{opacity:0;pointer-events:none}
+.loader-ring{width:60px;height:60px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:13px;color:var(--text3)}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--r) var(--r) 0 0;border:0.5px solid var(--border2);padding:24px;width:100%;transform:translateY(100%);transition:transform .3s}
+.modal-overlay.show .modal{transform:translateY(0)}
+.modal h3{font-size:17px;font-weight:500;margin-bottom:16px}
+.pin-display{font-size:28px;font-family:var(--mono);letter-spacing:.3em;text-align:center;margin-bottom:20px;height:44px;background:var(--surface2);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;border:0.5px solid var(--border)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pin-key{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r2);height:56px;font-size:18px;font-weight:400;color:var(--text);transition:all .15s}
+.pin-key:active{background:var(--surface);border-color:var(--accent);transform:scale(.95)}
+.pin-key.del{color:var(--text2)}
+.pin-key.empty{background:transparent;border:none;pointer-events:none}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loader-ring"></div>
+  <div class="loader-text" id="loadText">Initializing AttendX…</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PIN Modal -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal">
+    <h3>Enter your ID / PIN</h3>
+    <div class="pin-display" id="pinDisplay">——</div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key empty"></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinKey('del')">⌫</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-secondary" style="flex:1" onclick="closePinModal()">Cancel</button>
+      <button class="btn-primary" style="flex:1" onclick="submitPin()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: HOME ══ -->
+<div class="screen" id="home">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="top">
+      <div class="logo"><div class="logo-dot"></div><div class="logo-text">AttendX</div></div>
+      <h1>Smart <span>Attendance</span><br>Module</h1>
+      <p class="sub">Tap a method to mark your attendance</p>
+    </div>
+    <div class="time-card">
+      <div>
+        <div class="time-main" id="clockTime">00:00:00</div>
+        <div class="time-date" id="clockDate">Loading…</div>
+      </div>
+      <div class="status-dot" title="System active"></div>
+    </div>
+    <div class="btn-grid">
+      <button class="btn-action" onclick="showScreen('face')">
+        <div class="icon icon-face">👤</div>
+        <div class="label">Face Scan</div>
+        <div class="hint">~0.5 sec</div>
+      </button>
+      <button class="btn-action" onclick="startFingerprint()">
+        <div class="icon icon-fp">🫆</div>
+        <div class="label">Fingerprint</div>
+        <div class="hint">WebAuthn</div>
+      </button>
+      <button class="btn-action" onclick="showScreen('qrscan')">
+        <div class="icon icon-qr">⬛</div>
+        <div class="label">QR Code</div>
+        <div class="hint">Scan badge</div>
+      </button>
+      <button class="btn-action" onclick="openPinModal()">
+        <div class="icon icon-admin">🔑</div>
+        <div class="label">PIN / ID</div>
+        <div class="hint">Manual entry</div>
+      </button>
+    </div>
+    <div style="padding:0 24px 12px;display:flex;gap:10px">
+      <button class="btn-secondary" style="flex:1" onclick="showScreen('enroll')">+ Enroll New User</button>
+      <button class="btn-secondary" style="flex:1" onclick="showScreen('admin')">Admin Panel</button>
+    </div>
+    <div class="bottom-bar">
+      <div class="stat-item"><div class="stat-num green" id="statPresent">0</div><div class="stat-label">Present</div></div>
+      <div class="stat-item"><div class="stat-num amber" id="statAbsent">0</div><div class="stat-label">Absent</div></div>
+      <div class="stat-item"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Enrolled</div></div>
+      <div class="stat-item"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: FACE SCAN ══ -->
+<div class="screen hidden" id="face">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <h2>Face Recognition</h2>
+    </div>
+    <div class="cam-wrap">
+      <video id="videoEl" autoplay muted playsinline></video>
+      <canvas id="faceCanvas"></canvas>
+      <div class="cam-overlay">
+        <div class="face-guide"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="cam-status">
+      <div class="cam-status-dot" id="faceStatusDot" style="background:var(--amber)"></div>
+      <div class="cam-status-text" id="faceStatusText">Starting camera…</div>
+      <div class="cam-status-detail" id="faceStatusDetail"></div>
+    </div>
+    <div class="face-bottom">
+      <button class="btn-primary" id="faceScanBtn" onclick="runFaceScan()" disabled>Scan Now</button>
+      <button class="btn-secondary" onclick="goHome()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: FINGERPRINT ══ -->
+<div class="screen hidden" id="fingerprint">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <h2>Fingerprint / Biometric</h2>
+    </div>
+    <div class="fp-center">
+      <div class="fp-icon-wrap">
+        <div class="fp-ring" id="fpRing">
+          <div class="fp-icon">🫆</div>
+        </div>
+      </div>
+      <div class="fp-title" id="fpTitle">Place your finger</div>
+      <div class="fp-sub" id="fpSub">Use your device's fingerprint sensor<br>or face unlock to verify identity</div>
+    </div>
+    <div class="fp-bottom">
+      <button class="btn-primary" id="fpBtn" onclick="triggerWebAuthn()">Authenticate</button>
+      <button class="btn-secondary" onclick="goHome()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: QR SCAN ══ -->
+<div class="screen hidden" id="qrscan">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="header">
+      <button class="back-btn" onclick="stopQR();goHome()">←</button>
+      <h2>QR Code Scan</h2>
+    </div>
+    <div class="qr-wrap">
+      <video id="qrVideo" autoplay muted playsinline></video>
+      <div class="qr-corners">
+        <div class="qr-corner tl"></div>
+        <div class="qr-corner tr"></div>
+        <div class="qr-corner bl"></div>
+        <div class="qr-corner br"></div>
+      </div>
+    </div>
+    <div class="qr-status" id="qrStatus">Point camera at employee QR badge</div>
+    <div class="qr-bottom">
+      <button class="btn-secondary" onclick="stopQR();goHome()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: ENROLL ══ -->
+<div class="screen hidden" id="enroll">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <h2>Enroll New User</h2>
+    </div>
+    <div class="enroll-form">
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="enrollName" placeholder="e.g. Riya Ahmed" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Employee / Student ID</label>
+        <input type="text" id="enrollId" placeholder="e.g. EMP-001" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <select id="enrollDept">
+          <option value="">Select department</option>
+          <option>Engineering</option>
+          <option>Design</option>
+          <option>Marketing</option>
+          <option>Operations</option>
+          <option>HR</option>
+          <option>Finance</option>
+          <option>Management</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>PIN (4-digit fallback)</label>
+        <input type="number" id="enrollPin" placeholder="4-digit PIN" maxlength="4" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Face Photo</label>
+        <div class="enroll-face-preview" id="facePreviewWrap" onclick="startEnrollCamera()">
+          <img id="enrollPreview" alt=""/>
+          <span id="facePreviewHint">📷 Tap to capture face</span>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+    <div class="enroll-bottom">
+      <button class="btn-primary" onclick="saveEnrollment()">Save &amp; Enroll</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: RESULT ══ -->
+<div class="screen hidden" id="result">
+  <div class="bg-mesh"></div>
+  <div class="content" id="resultContent" style="align-items:center;justify-content:center;padding:32px 24px;text-align:center">
+  </div>
+</div>
+
+<!-- ══ SCREEN: ADMIN ══ -->
+<div class="screen hidden" id="admin">
+  <div class="bg-mesh"></div>
+  <div class="content">
+    <div class="header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <h2>Admin Panel</h2>
+    </div>
+    <div class="admin-tabs">
+      <div class="tab active" onclick="switchTab('logs')">Logs</div>
+      <div class="tab" onclick="switchTab('summary')">Summary</div>
+      <div class="tab" onclick="switchTab('users')">Users</div>
+      <div class="tab" onclick="switchTab('export')">Export</div>
+    </div>
+    <div class="admin-panel active" id="panelLogs"></div>
+    <div class="admin-panel" id="panelSummary"></div>
+    <div class="admin-panel" id="panelUsers"></div>
+    <div class="admin-panel" id="panelExport">
+      <button class="export-btn" onclick="exportCSV()"><span class="export-icon">📄</span>Export attendance as CSV</button>
+      <button class="export-btn" onclick="exportJSON()"><span class="export-icon">📦</span>Export full data as JSON</button>
+      <button class="export-btn" onclick="clearLogs()" style="color:var(--red);border-color:#ff4f6a30"><span class="export-icon">🗑️</span>Clear all attendance logs</button>
+      <button class="export-btn" onclick="clearAll()" style="color:var(--red);border-color:#ff4f6a30"><span class="export-icon">⚠️</span>Reset all data (users + logs)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  GLOBAL STATE
+// ═══════════════════════════════════════════════
+let db = {
+  users: JSON.parse(localStorage.getItem('attendx_users') || '[]'),
+  logs:  JSON.parse(localStorage.getItem('attendx_logs')  || '[]')
+};
+let faceModelsLoaded = false;
+let videoStream = null;
+let qrStream = null;
+let qrInterval = null;
+let enrollCameraStream = null;
+let currentPin = '';
+let enrollFaceData = null;
+let activeTab = 'logs';
+
+function saveDB() {
+  localStorage.setItem('attendx_users', JSON.stringify(db.users));
+  localStorage.setItem('attendx_logs', JSON.stringify(db.logs));
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+async function init() {
+  setLoadText('Loading face recognition models…');
+  try {
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    faceModelsLoaded = true;
+    setLoadText('Models ready ✓');
+  } catch(e) {
+    setLoadText('Running in demo mode');
+    faceModelsLoaded = false;
+  }
+  await new Promise(r => setTimeout(r, 800));
+  document.getElementById('loadingScreen').classList.add('done');
+  startClock();
+  updateStats();
+}
+
+function setLoadText(t) { document.getElementById('loadText').textContent = t; }
+
+// ═══════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('clockTime').textContent =
+      now.toLocaleTimeString('en-US',{hour12:false});
+    document.getElementById('clockDate').textContent =
+      now.toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ═══════════════════════════════════════════════
+//  SCREEN NAVIGATION
+// ═══════════════════════════════════════════════
+let currentScreen = 'home';
+function showScreen(id) {
+  document.getElementById(currentScreen).classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
+  currentScreen = id;
+  if (id === 'face') startFaceCamera();
+  if (id === 'qrscan') startQRCamera();
+  if (id === 'admin') renderAdmin();
+}
+function goHome() {
+  stopFaceCamera();
+  stopQR();
+  stopEnrollCamera();
+  showScreen('home');
+  updateStats();
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════════════
+function updateStats() {
+  const today = new Date().toDateString();
+  const todayLogs = db.logs.filter(l => new Date(l.time).toDateString() === today);
+  const presentIds = [...new Set(todayLogs.map(l => l.userId))];
+  document.getElementById('statPresent').textContent = presentIds.length;
+  document.getElementById('statAbsent').textContent = Math.max(0, db.users.length - presentIds.length);
+  document.getElementById('statTotal').textContent = db.users.length;
+  document.getElementById('statToday').textContent = todayLogs.length;
+}
+
+// ═══════════════════════════════════════════════
+//  FACE CAMERA
+// ═══════════════════════════════════════════════
+async function startFaceCamera() {
+  const video = document.getElementById('videoEl');
+  const statusDot = document.getElementById('faceStatusDot');
+  const statusText = document.getElementById('faceStatusText');
+  const scanBtn = document.getElementById('faceScanBtn');
+  statusText.textContent = 'Requesting camera access…';
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    video.srcObject = videoStream;
+    await new Promise(r => video.onloadedmetadata = r);
+    statusDot.style.background = 'var(--green)';
+    statusText.textContent = faceModelsLoaded ? 'Camera ready — align your face' : 'Camera ready (demo mode)';
+    document.getElementById('faceStatusDetail').textContent = faceModelsLoaded ? 'AI models loaded' : '';
+    scanBtn.disabled = false;
+  } catch(e) {
+    statusDot.style.background = 'var(--red)';
+    statusText.textContent = 'Camera access denied';
+    document.getElementById('faceStatusDetail').textContent = e.message;
+  }
+}
+
+function stopFaceCamera() {
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+}
+
+async function runFaceScan() {
+  const statusText = document.getElementById('faceStatusText');
+  const statusDot = document.getElementById('faceStatusDot');
+  const btn = document.getElementById('faceScanBtn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  statusDot.style.background = 'var(--accent)';
+  statusText.textContent = 'Detecting face…';
+
+  if (!faceModelsLoaded || db.users.length === 0) {
+    await new Promise(r => setTimeout(r, 1500));
+    // Demo: match random user or fail
+    if (db.users.length > 0) {
+      const u = db.users[Math.floor(Math.random() * db.users.length)];
+      recordAndShowResult(u, 'face');
+    } else {
+      showResultScreen(false, null, 'face', 'No users enrolled — please enroll first');
+    }
+    btn.disabled = false; btn.textContent = 'Scan Now';
+    return;
+  }
+
+  try {
+    const video = document.getElementById('videoEl');
+    const detections = await faceapi
+      .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks(true)
+      .withFaceDescriptors();
+
+    if (!detections.length) {
+      statusText.textContent = 'No face detected — try again';
+      statusDot.style.background = 'var(--amber)';
+      btn.disabled = false; btn.textContent = 'Scan Now';
+      return;
+    }
+    statusText.textContent = 'Face found — matching…';
+    const desc = detections[0].descriptor;
+    // Match against enrolled users
+    let bestMatch = null, bestDist = 0.5;
+    for (const u of db.users) {
+      if (!u.faceDescriptor) continue;
+      const stored = new Float32Array(u.faceDescriptor);
+      const dist = faceapi.euclideanDistance(desc, stored);
+      if (dist < bestDist) { bestDist = dist; bestMatch = u; }
+    }
+    if (bestMatch) {
+      recordAndShowResult(bestMatch, 'face');
+    } else {
+      showResultScreen(false, null, 'face', 'Face not recognised — enroll first or try PIN');
+    }
+  } catch(e) {
+    statusText.textContent = 'Scan error — try again';
+    statusDot.style.background = 'var(--red)';
+  }
+  btn.disabled = false; btn.textContent = 'Scan Now';
+}
+
+// ═══════════════════════════════════════════════
+//  FINGERPRINT / WEBAUTHN
+// ═══════════════════════════════════════════════
+function startFingerprint() { showScreen('fingerprint'); }
+
+async function triggerWebAuthn() {
+  const fpRing = document.getElementById('fpRing');
+  const fpTitle = document.getElementById('fpTitle');
+  const fpSub = document.getElementById('fpSub');
+  const fpBtn = document.getElementById('fpBtn');
+  fpRing.classList.add('scanning');
+  fpBtn.disabled = true;
+  fpTitle.textContent = 'Verifying…';
+  fpSub.textContent = 'Follow your device prompt';
+
+  if (!window.PublicKeyCredential) {
+    // Fallback: use PIN
+    fpTitle.textContent = 'WebAuthn not supported';
+    fpSub.textContent = 'Falling back to PIN entry';
+    fpRing.classList.remove('scanning');
+    fpBtn.disabled = false;
+    setTimeout(() => { goHome(); openPinModal(); }, 1200);
+    return;
+  }
+  try {
+    // Check if user is already registered
+    const regKey = 'attendx_webauthn_' + (db.users[0]?.id || 'demo');
+    let credId = localStorage.getItem(regKey);
+    if (!credId) {
+      // Register first
+      await registerWebAuthn();
+      credId = localStorage.getItem(regKey);
+    }
+    if (!credId) throw new Error('No credential');
+    // Authenticate
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rpId: location.hostname || 'localhost',
+        allowCredentials: [{ id: base64ToBuffer(credId), type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    if (assertion) {
+      fpTitle.textContent = 'Verified! ✓';
+      fpRing.classList.remove('scanning');
+      // Find user by credential
+      const u = db.users.find(u => u.credId === credId) || db.users[0];
+      if (u) { recordAndShowResult(u, 'fingerprint'); }
+      else { showResultScreen(false, null, 'fingerprint', 'No user linked — enroll first'); }
+    }
+  } catch(e) {
+    if (e.name === 'NotAllowedError') {
+      fpTitle.textContent = 'Authentication cancelled';
+      fpSub.textContent = 'Please try again';
+    } else {
+      fpTitle.textContent = 'Auth failed';
+      fpSub.textContent = e.message || 'Try another method';
+    }
+    fpRing.classList.remove('scanning');
+    fpBtn.disabled = false;
+  }
+}
+
+async function registerWebAuthn() {
+  const u = db.users[0] || { id: 'demo', name: 'Demo User' };
+  const regKey = 'attendx_webauthn_' + u.id;
+  const cred = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'AttendX', id: location.hostname || 'localhost' },
+      user: { id: new TextEncoder().encode(u.id), name: u.id, displayName: u.name },
+      pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+      authenticatorSelection: { userVerification: 'required' },
+      timeout: 60000
+    }
+  });
+  if (cred) {
+    const credIdB64 = bufferToBase64(cred.rawId);
+    localStorage.setItem(regKey, credIdB64);
+    if (db.users[0]) { db.users[0].credId = credIdB64; saveDB(); }
+  }
+}
+
+function bufferToBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function base64ToBuffer(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf;
+}
+
+// ═══════════════════════════════════════════════
+//  QR SCAN
+// ═══════════════════════════════════════════════
+async function startQRCamera() {
+  const video = document.getElementById('qrVideo');
+  document.getElementById('qrStatus').textContent = 'Starting camera…';
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    video.srcObject = qrStream;
+    document.getElementById('qrStatus').textContent = 'Point camera at QR badge';
+    startQRDecode(video);
+  } catch(e) {
+    document.getElementById('qrStatus').textContent = 'Camera denied: ' + e.message;
+  }
+}
+
+function startQRDecode(video) {
+  if ('BarcodeDetector' in window) {
+    const bd = new BarcodeDetector({ formats: ['qr_code'] });
+    qrInterval = setInterval(async () => {
+      try {
+        const barcodes = await bd.detect(video);
+        if (barcodes.length) {
+          stopQR();
+          const code = barcodes[0].rawValue;
+          handleQRResult(code);
+        }
+      } catch(e) {}
+    }, 500);
+  } else {
+    // Demo: simulate QR scan after 3s if users exist
+    document.getElementById('qrStatus').textContent = 'QR scanning active (BarcodeDetector not supported — demo mode)';
+    qrInterval = setTimeout(() => {
+      if (db.users.length > 0) {
+        stopQR();
+        const u = db.users[Math.floor(Math.random() * db.users.length)];
+        handleQRResult(u.id);
+      }
+    }, 3000);
+  }
+}
+
+function handleQRResult(code) {
+  const u = db.users.find(u => u.id === code || u.id.toLowerCase() === code.toLowerCase());
+  if (u) { recordAndShowResult(u, 'qr'); }
+  else { showResultScreen(false, null, 'qr', 'QR code not recognised: ' + code); }
+}
+
+function stopQR() {
+  clearInterval(qrInterval); clearTimeout(qrInterval);
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+}
+
+// ═══════════════════════════════════════════════
+//  PIN MODAL
+// ═══════════════════════════════════════════════
+function openPinModal() {
+  currentPin = '';
+  updatePinDisplay();
+  document.getElementById('pinModal').classList.add('show');
+}
+function closePinModal() {
+  document.getElementById('pinModal').classList.remove('show');
+}
+function pinKey(k) {
+  if (k === 'del') { currentPin = currentPin.slice(0, -1); }
+  else if (currentPin.length < 6) { currentPin += k; }
+  updatePinDisplay();
+}
+function updatePinDisplay() {
+  const d = document.getElementById('pinDisplay');
+  d.textContent = currentPin.length ? '●'.repeat(currentPin.length) : '——';
+}
+function submitPin() {
+  if (!currentPin) { showToast('Enter your PIN or ID', 'error'); return; }
+  closePinModal();
+  const u = db.users.find(u => u.pin === currentPin || u.id.toLowerCase() === currentPin.toLowerCase());
+  if (u) { recordAndShowResult(u, 'pin'); }
+  else { showResultScreen(false, null, 'pin', 'PIN or ID not found'); }
+}
+
+// ═══════════════════════════════════════════════
+//  ATTENDANCE RECORDING
+// ═══════════════════════════════════════════════
+function recordAndShowResult(user, method) {
+  const now = new Date();
+  const log = {
+    id: Date.now(),
+    userId: user.id,
+    name: user.name,
+    dept: user.dept,
+    method: method,
+    time: now.toISOString(),
+    type: getCheckType(user.id)
+  };
+  db.logs.push(log);
+  saveDB();
+  stopFaceCamera();
+  stopQR();
+  showResultScreen(true, log, method);
+}
+
+function getCheckType(userId) {
+  const today = new Date().toDateString();
+  const todayLogs = db.logs.filter(l => l.userId === userId && new Date(l.time).toDateString() === today);
+  return todayLogs.length % 2 === 0 ? 'check-in' : 'check-out';
+}
+
+function showResultScreen(success, log, method, errorMsg) {
+  const content = document.getElementById('resultContent');
+  const now = new Date();
+  const methodLabel = { face: 'Face Recognition', fingerprint: 'Fingerprint', qr: 'QR Code', pin: 'PIN' }[method] || method;
+  const typeLabel = log ? (log.type === 'check-in' ? '✅ Checked In' : '🔄 Checked Out') : '';
+
+  if (success && log) {
+    content.innerHTML = `
+      <div class="result-icon success" style="animation:pop .4s cubic-bezier(.34,1.56,.64,1)">✅</div>
+      <div class="result-title success">${log.type === 'check-in' ? 'Checked In!' : 'Checked Out!'}</div>
+      <div class="result-name">${log.name}</div>
+      <div class="result-time">${now.toLocaleTimeString()} · ${now.toLocaleDateString()}</div>
+      <div class="result-card" style="width:100%">
+        <div class="result-row"><span class="result-key">Department</span><span class="result-val">${log.dept || '—'}</span></div>
+        <div class="result-row"><span class="result-key">Employee ID</span><span class="result-val">${log.userId}</span></div>
+        <div class="result-row"><span class="result-key">Method</span><span class="result-val green">${methodLabel}</span></div>
+        <div class="result-row"><span class="result-key">Status</span><span class="result-val green">${log.type}</span></div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-bottom:10px" onclick="goHome()">Done</button>
+      <button class="btn-secondary" style="width:100%" onclick="showScreen('admin')">View Logs</button>`;
+  } else {
+    content.innerHTML = `
+      <div class="result-icon fail" style="animation:pop .4s cubic-bezier(.34,1.56,.64,1)">❌</div>
+      <div class="result-title fail">Not Recognised</div>
+      <div class="result-name" style="color:var(--text2)">${errorMsg || 'Authentication failed'}</div>
+      <div class="result-time" style="margin-bottom:32px">${now.toLocaleTimeString()}</div>
+      <button class="btn-primary" style="width:100%;margin-bottom:10px" onclick="goHome()">Try Again</button>
+      <button class="btn-secondary" style="width:100%" onclick="goHome();openPinModal()">Use PIN instead</button>`;
+  }
+
+  const style = document.createElement('style');
+  style.textContent = '@keyframes pop{0%{transform:scale(0.5);opacity:0}100%{transform:scale(1);opacity:1}}';
+  document.head.appendChild(style);
+
+  showScreen('result');
+}
+
+// ═══════════════════════════════════════════════
+//  ENROLL CAMERA
+// ═══════════════════════════════════════════════
+async function startEnrollCamera() {
+  const hint = document.getElementById('facePreviewHint');
+  const preview = document.getElementById('enrollPreview');
+  hint.textContent = '📷 Starting camera…';
+  try {
+    enrollCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 } }
+    });
+    const tempVid = document.createElement('video');
+    tempVid.srcObject = enrollCameraStream;
+    tempVid.autoplay = true; tempVid.muted = true; tempVid.playsinline = true;
+    await new Promise(r => tempVid.onloadedmetadata = r);
+    await new Promise(r => setTimeout(r, 800));
+    hint.textContent = '📸 Capturing…';
+    await new Promise(r => setTimeout(r, 600));
+    const canvas = document.createElement('canvas');
+    canvas.width = tempVid.videoWidth; canvas.height = tempVid.videoHeight;
+    canvas.getContext('2d').drawImage(tempVid, 0, 0);
+    enrollFaceData = canvas.toDataURL('image/jpeg', 0.8);
+
+    // Capture face descriptor if models loaded
+    if (faceModelsLoaded) {
+      const det = await faceapi.detectSingleFace(tempVid, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks(true).withFaceDescriptor();
+      if (det) {
+        enrollFaceData = { img: enrollFaceData, descriptor: Array.from(det.descriptor) };
+      }
+    }
+    if (typeof enrollFaceData === 'string') enrollFaceData = { img: enrollFaceData, descriptor: null };
+
+    preview.src = enrollFaceData.img;
+    preview.style.display = 'block';
+    hint.textContent = '';
+
+    // Show captured badge
+    const badge = document.createElement('div');
+    badge.className = 'captured-badge'; badge.textContent = '✓ Captured';
+    document.getElementById('facePreviewWrap').appendChild(badge);
+
+    stopEnrollCamera(tempVid);
+    showToast('Face captured!', 'success');
+  } catch(e) {
+    hint.textContent = '❌ Camera denied';
+    showToast('Camera error: ' + e.message, 'error');
+  }
+}
+
+function stopEnrollCamera(vid) {
+  if (vid && vid.srcObject) vid.srcObject.getTracks().forEach(t => t.stop());
+  if (enrollCameraStream) { enrollCameraStream.getTracks().forEach(t => t.stop()); enrollCameraStream = null; }
+}
+
+function saveEnrollment() {
+  const name = document.getElementById('enrollName').value.trim();
+  const id = document.getElementById('enrollId').value.trim();
+  const dept = document.getElementById('enrollDept').value;
+  const pin = document.getElementById('enrollPin').value.trim();
+  if (!name || !id) { showToast('Name and ID are required', 'error'); return; }
+  if (db.users.find(u => u.id === id)) { showToast('ID already exists', 'error'); return; }
+  const user = {
+    id, name, dept,
+    pin: pin || id,
+    faceDescriptor: enrollFaceData?.descriptor || null,
+    faceImg: enrollFaceData?.img || null,
+    enrolledAt: new Date().toISOString()
+  };
+  db.users.push(user);
+  saveDB();
+  // Reset form
+  document.getElementById('enrollName').value = '';
+  document.getElementById('enrollId').value = '';
+  document.getElementById('enrollDept').value = '';
+  document.getElementById('enrollPin').value = '';
+  document.getElementById('enrollPreview').style.display = 'none';
+  document.getElementById('facePreviewHint').textContent = '📷 Tap to capture face';
+  const badge = document.querySelector('.captured-badge');
+  if (badge) badge.remove();
+  enrollFaceData = null;
+  showToast(`${name} enrolled!`, 'success');
+  goHome();
+}
+
+// ═══════════════════════════════════════════════
+//  ADMIN PANEL
+// ═══════════════════════════════════════════════
+const COLORS = ['#4f8eff','#7c5cfc','#1ecb7b','#ffb84f','#ff4f6a','#00d4aa','#f7a23e','#a78bfa'];
+function avatarColor(name) { let h=0; for(const c of name) h=c.charCodeAt(0)+((h<<5)-h); return COLORS[Math.abs(h)%COLORS.length]; }
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['logs','summary','users','export'][i] === tab);
+  });
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  renderAdmin();
+}
+
+function renderAdmin() {
+  renderLogs(); renderSummary(); renderUsers();
+}
+
+function renderLogs() {
+  const el = document.getElementById('panelLogs');
+  if (!db.logs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">📋</div><p>No attendance records yet.<br>Mark attendance using any method.</p></div>';
+    return;
+  }
+  const sorted = [...db.logs].reverse().slice(0, 50);
+  el.innerHTML = sorted.map(l => {
+    const t = new Date(l.time);
+    const color = avatarColor(l.name);
+    const typeClass = {face:'type-face',fingerprint:'type-fp',qr:'type-qr',pin:'type-pin'}[l.method] || 'type-pin';
+    return `<div class="log-item">
+      <div class="log-avatar" style="background:${color}22;color:${color}">${initials(l.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="log-name">${l.name}</div>
+        <div class="log-meta">${t.toLocaleTimeString()} · ${t.toLocaleDateString()} · ${l.dept||'—'}</div>
+      </div>
+      <span class="log-type ${typeClass}">${l.method}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSummary() {
+  const el = document.getElementById('panelSummary');
+  const today = new Date().toDateString();
+  const todayLogs = db.logs.filter(l => new Date(l.time).toDateString() === today);
+  const presentToday = new Set(todayLogs.map(l => l.userId)).size;
+  const methods = {};
+  db.logs.forEach(l => { methods[l.method] = (methods[l.method]||0)+1; });
+  el.innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-val" style="color:var(--green)">${presentToday}</div><div class="summary-label">Present today</div></div>
+      <div class="summary-card"><div class="summary-val" style="color:var(--amber)">${Math.max(0,db.users.length-presentToday)}</div><div class="summary-label">Absent today</div></div>
+      <div class="summary-card"><div class="summary-val">${db.users.length}</div><div class="summary-label">Total enrolled</div></div>
+      <div class="summary-card"><div class="summary-val">${db.logs.length}</div><div class="summary-label">Total records</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">By method</div>
+    ${Object.entries(methods).map(([m,n]) => `
+      <div class="log-item" style="margin-bottom:8px">
+        <div style="font-size:20px">${{face:'👤',fingerprint:'🫆',qr:'⬛',pin:'🔑'}[m]||'🔑'}</div>
+        <div style="flex:1"><div class="log-name">${m}</div></div>
+        <div style="font-size:18px;font-family:var(--mono);color:var(--accent)">${n}</div>
+      </div>`).join('') || '<div class="empty-state"><p>No data yet</p></div>'}`;
+}
+
+function renderUsers() {
+  const el = document.getElementById('panelUsers');
+  if (!db.users.length) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">👤</div><p>No users enrolled.<br>Go back and enroll users first.</p></div>';
+    return;
+  }
+  el.innerHTML = db.users.map(u => {
+    const color = avatarColor(u.name);
+    const enrolled = db.logs.filter(l => l.userId === u.id).length;
+    return `<div class="user-item">
+      ${u.faceImg ? `<img src="${u.faceImg}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0" alt=""/>` :
+        `<div class="user-avatar" style="background:${color}22;color:${color}">${initials(u.name)}</div>`}
+      <div style="flex:1;min-width:0">
+        <div class="user-name">${u.name}</div>
+        <div class="user-dept">${u.id} · ${u.dept||'—'}</div>
+      </div>
+      <div class="user-enrolled">${enrolled} records</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════
+function exportCSV() {
+  const header = 'ID,Name,Department,Method,Type,Time\n';
+  const rows = db.logs.map(l =>
+    `${l.userId},"${l.name}","${l.dept||''}",${l.method},${l.type||''},"${new Date(l.time).toLocaleString()}"`
+  ).join('\n');
+  downloadFile('attendance_' + Date.now() + '.csv', header + rows, 'text/csv');
+  showToast('CSV exported!', 'success');
+}
+
+function exportJSON() {
+  downloadFile('attendx_data_' + Date.now() + '.json', JSON.stringify({users:db.users.map(u=>({...u,faceDescriptor:undefined,faceImg:undefined})),logs:db.logs},null,2), 'application/json');
+  showToast('JSON exported!', 'success');
+}
+
+function downloadFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = name; a.click();
+}
+
+function clearLogs() {
+  if (!confirm('Clear all attendance logs? This cannot be undone.')) return;
+  db.logs = []; saveDB(); renderAdmin(); showToast('Logs cleared');
+}
+
+function clearAll() {
+  if (!confirm('Reset ALL data including users? This cannot be undone.')) return;
+  db.users = []; db.logs = []; saveDB(); goHome(); showToast('All data reset');
+}
+
+// ═══════════════════════════════════════════════
+//  SEED DEMO DATA
+// ═══════════════════════════════════════════════
+function seedDemoData() {
+  if (db.users.length > 0) return;
+  const demos = [
+    {id:'EMP-001',name:'Riya Ahmed',dept:'Engineering',pin:'1234'},
+    {id:'EMP-002',name:'Tariq Hassan',dept:'Design',pin:'5678'},
+    {id:'EMP-003',name:'Nadia Islam',dept:'HR',pin:'4321'},
+    {id:'EMP-004',name:'Karim Uddin',dept:'Operations',pin:'8765'},
+  ];
+  demos.forEach(u => db.users.push({...u, faceDescriptor:null, faceImg:null, enrolledAt:new Date().toISOString()}));
+  saveDB();
+}
+
+seedDemoData();
+init();
+</script>
+</body>
+</html>
